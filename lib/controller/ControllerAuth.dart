@@ -41,9 +41,10 @@ class ControllerAuth {
           onSuccess: (value) async {
             dynamic result = value["result"];
             if(result != null) {
-              ModelUser modelUser = ModelUser(idUser: result["id"], username: result["username"]);
+              ModelUser modelUser = ModelUser(idUser: result["id"], username: result["username"], alamat: result["alamat"]);
               await Session.save(header: "idUser", integerData: modelUser.idUser);
               await Session.save(header: "username", stringData: modelUser.username);
+              await Session.save(header: "alamat", stringData: modelUser.alamat);
               success();
             } else {
               dynamic status = value["status"];

@@ -1,13 +1,22 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:mcfood/helper/FormatCurrency.dart';
 import 'package:mcfood/model/ModelCheckout.dart';
 import 'package:mcfood/util/CustomColor.dart';
 import 'package:mcfood/util/ScreenSize.dart';
+import 'package:request_api_helper/session.dart';
 
 class DetailOrder extends StatefulWidget {
   List<ModelCheckout> listOrder = [];
+  String alamat;
+  String username;
 
-  DetailOrder({Key? key, required this.listOrder}) : super(key: key);
+  DetailOrder(
+      {Key? key,
+      required this.listOrder,
+      required this.alamat,
+      required this.username})
+      : super(key: key);
 
   @override
   State<DetailOrder> createState() => _DetailOrderState();
@@ -45,7 +54,11 @@ class _DetailOrderState extends State<DetailOrder> with ChangeNotifier {
         children: [
           SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.only(left: 20, top: 25, bottom: ScreenSize.getHeight(context) / 10, right: 20),
+              padding: EdgeInsets.only(
+                  left: 20,
+                  top: 25,
+                  bottom: ScreenSize.getHeight(context) / 10,
+                  right: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -65,6 +78,26 @@ class _DetailOrderState extends State<DetailOrder> with ChangeNotifier {
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
+                      "Penerima",
+                      style: TextStyle(
+                          fontFamily: "inter600",
+                          fontSize: 20,
+                          color: CustomColor.black),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Text(
+                      widget.username,
+                      style: TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 15,
+                          color: CustomColor.black),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 15),
+                    child: Text(
                       "Alamat",
                       style: TextStyle(
                           fontFamily: "inter600",
@@ -74,11 +107,13 @@ class _DetailOrderState extends State<DetailOrder> with ChangeNotifier {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: Text("Jl Ujung berung", style: TextStyle(
-                      fontFamily: "inter500",
-                      fontSize: 15,
-                      color: CustomColor.black
-                    ),),
+                    child: Text(
+                      widget.alamat,
+                      style: TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 15,
+                          color: CustomColor.black),
+                    ),
                   )
                 ],
               ),
@@ -145,7 +180,8 @@ class _DetailOrderState extends State<DetailOrder> with ChangeNotifier {
           Container(
             width: 80,
             height: 70,
-            color: CustomColor.primary,
+            color: CustomColor.white,
+            child: CachedNetworkImage(imageUrl: listOrders[index].gambar),
           ),
           Expanded(
             child: Padding(

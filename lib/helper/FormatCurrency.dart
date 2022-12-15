@@ -1,7 +1,7 @@
 import 'package:intl/intl.dart';
 
 class FormatCurrency {
-  static String convertToIdr(dynamic number, int decimalDigit) {
+  static String convertToIdr(int number, int decimalDigit) {
     NumberFormat currencyFormatter = NumberFormat.currency(
       locale: 'id',
       symbol: '',

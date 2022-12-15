@@ -1,13 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:mcfood/controller/ControllerMakanan.dart';
 import 'package:mcfood/customStyle/CustomDecoration.dart';
 import 'package:mcfood/helper/FormatCurrency.dart';
 import 'package:mcfood/model/ModelFood.dart';
 import 'package:mcfood/model/ModelCheckout.dart';
+import 'package:mcfood/model/ModelMakanan.dart';
 import 'package:mcfood/ui/DetailOrder.dart';
 import 'package:mcfood/util/CustomColor.dart';
 import 'package:mcfood/util/ScreenSize.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent-tab-view.dart'
     as bottomNav;
+import 'package:request_api_helper/session.dart';
 
 class ListFoodSub extends StatefulWidget {
   const ListFoodSub({Key? key}) : super(key: key);
@@ -17,11 +21,15 @@ class ListFoodSub extends StatefulWidget {
 }
 
 class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
-  ValueNotifier<List<ModelFood>> valListFood = ValueNotifier([]);
+  ValueNotifier<List<ModelFood>> listFood = ValueNotifier([]);
   ValueNotifier<List<int>> valListCountItem = ValueNotifier([]);
   ValueNotifier<bool> valIsScroll = ValueNotifier(false);
+
+  ValueNotifier<List<ModelMakanan>> listMakanan = ValueNotifier([]);
+
   ValueNotifier<int> valTot = ValueNotifier(0);
-  List<ModelFood> listFood = [];
+
+  // List<ModelFood> listFood = [];
   List<ModelCheckout> listOrder = [];
 
   String query = "";
@@ -44,14 +52,17 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                 child: TextFormField(
                   onChanged: (text) {
                     query = text;
-                    search();
+                    // search();
                   },
                   style: TextStyle(
                       fontFamily: "inter500",
                       fontSize: 15,
                       color: CustomColor.black),
-                  decoration: CustomDecoration()
-                      .getFormBorderWithIcon(Icons.search_sharp, "Cari Makanan...", 30, CustomColor.black),
+                  decoration: CustomDecoration().getFormBorderWithIcon(
+                      Icons.search_sharp,
+                      "Cari Makanan...",
+                      30,
+                      CustomColor.black),
                 ),
               ),
               Expanded(
@@ -74,7 +85,7 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                     }
                   },
                   child: ValueListenableBuilder(
-                    valueListenable: valListFood,
+                    valueListenable: listMakanan,
                     builder: (_, result, __) {
                       return ListView.builder(
                           padding: EdgeInsets.zero,
@@ -161,7 +172,7 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
   }
 
   Widget listItemFood(int index) {
-    if (index == valListFood.value.length) {
+    if (index == listMakanan.value.length) {
       return Padding(
           padding: EdgeInsets.only(bottom: ScreenSize.getHeight(context) / 10));
     } else {
@@ -172,7 +183,9 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
             Container(
               width: 80,
               height: 70,
-              color: CustomColor.primary,
+              color: CustomColor.white,
+              child:
+                  CachedNetworkImage(imageUrl: listMakanan.value[index].image),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 20),
@@ -180,7 +193,7 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    valListFood.value[index].name,
+                    listMakanan.value[index].nama,
                     style: TextStyle(
                         fontFamily: "inter600",
                         fontSize: 18,
@@ -189,7 +202,8 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5),
                     child: Text(
-                      FormatCurrency.convertToIdr(valListFood.value[index].price, 0),
+                      FormatCurrency.convertToIdr(
+                          listMakanan.value[index].price, 0),
                       style: TextStyle(
                           fontFamily: "inter500",
                           fontSize: 15,
@@ -197,7 +211,7 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                     ),
                   ),
                   Text(
-                    "${valListFood.value[index].rating}",
+                    listMakanan.value[index].rating,
                     style: TextStyle(
                         fontFamily: "inter500",
                         fontSize: 15,
@@ -214,15 +228,15 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                     children: [
                       InkWell(
                         onTap: () {
-                          int currVal = valListFood.value[index].sum;
+                          int currVal = listMakanan.value[index].sum;
                           if (currVal != 0) {
                             currVal--;
-                            valListFood.value[index].sum = currVal;
+                            listMakanan.value[index].sum = currVal;
                             valListCountItem.value[index] = currVal;
                             valListCountItem.notifyListeners();
 
-                            sumAddMinTot(valListFood.value[index],
-                                valListFood.value[index].price, currVal, false);
+                            sumAddMinTot(listMakanan.value[index],
+                                listMakanan.value[index].price, currVal, false);
                           }
                         },
                         borderRadius:
@@ -249,17 +263,17 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
                       ),
                       InkWell(
                           onTap: () {
-                            int currVal = valListFood.value[index].sum;
+                            int currVal = listMakanan.value[index].sum;
                             currVal++;
-                            valListFood.value[index].sum = currVal;
+                            listMakanan.value[index].sum = currVal;
                             valListCountItem.value[index] = currVal;
                             valListCountItem.notifyListeners();
 
                             if (!valIsScroll.value) {
                               valIsScroll.value = true;
                             }
-                            sumAddMinTot(valListFood.value[index],
-                                valListFood.value[index].price, currVal, true);
+                            sumAddMinTot(listMakanan.value[index],
+                                listMakanan.value[index].price, currVal, true);
                           },
                           child: Icon(Icons.add_circle,
                               color: CustomColor.primary)),
@@ -276,32 +290,45 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
 
   @override
   void initState() {
-    setupDummy();
+    // setupDummy();
+    getListMakanan();
     super.initState();
   }
 
+  void getListMakanan() async {
+    await ControllerMakanan().getListMakanan((res) {
+      listMakanan.value = res;
+      for (var x = 0; x < res.length; x++) {
+        valListCountItem.value.add(res[x].sum);
+      }
+      listMakanan.notifyListeners();
+    });
+  }
+
   Future<void> sumAddMinTot(
-      ModelFood model, int price, int totItem, bool isAdd) async {
+      ModelMakanan model, int price, int totItem, bool isAdd) async {
     int result = 0;
     if (isAdd) {
       result = valTot.value + price;
       if (listOrder.isEmpty) {
         listOrder.add(ModelCheckout(
-            idOrder: model.idFood,
-            name: model.name,
+            idOrder: model.idMakanan,
+            name: model.nama,
             price: model.price,
-            sum: totItem));
+            sum: totItem,
+            gambar: model.image));
       } else {
-        bool alreadyAdd = await getAvailData(model.idFood);
+        bool alreadyAdd = await getAvailData(model.idMakanan);
         if (!alreadyAdd) {
           listOrder.add(ModelCheckout(
-              idOrder: model.idFood,
-              name: model.name,
+              idOrder: model.idMakanan,
+              name: model.nama,
               price: model.price,
-              sum: totItem));
+              sum: totItem,
+              gambar: model.image));
         } else {
           for (int x = 0; x < listOrder.length; x++) {
-            if (listOrder[x].idOrder == model.idFood) {
+            if (listOrder[x].idOrder == model.idMakanan) {
               listOrder[x].sum = totItem;
               break;
             }
@@ -311,8 +338,8 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
     } else {
       result = valTot.value - price;
       for (int x = 0; x < listOrder.length; x++) {
-        if (listOrder[x].idOrder == model.idFood) {
-          if(result == 0) {
+        if (listOrder[x].idOrder == model.idMakanan) {
+          if (totItem == 0) {
             listOrder.removeAt(x);
           } else {
             listOrder[x].sum = totItem;
@@ -341,72 +368,73 @@ class _ListFoodSubState extends State<ListFoodSub> with ChangeNotifier {
     return result;
   }
 
-  void search() {
-    if (query.isNotEmpty) {
-      List<ModelFood> newList = [];
-      for (int x = 0; x < listFood.length; x++) {
-        if (listFood[x].name.toLowerCase() == query.toLowerCase() ||
-            listFood[x].name.toLowerCase().contains(query.toLowerCase())) {
-          ModelFood model = listFood[x];
-          newList.add(ModelFood(
-              idFood: model.idFood,
-              name: model.name,
-              price: model.price,
-              rating: model.rating,
-              sum: model.sum));
-          valListFood.value = newList;
-          valListFood.notifyListeners();
-        }
-      }
-    } else {
-      valListFood.value = listFood;
-      valListFood.notifyListeners();
-    }
-  }
+  // void search() {
+  //   if (query.isNotEmpty) {
+  //     List<ModelFood> newList = [];
+  //     for (int x = 0; x < listFood.length; x++) {
+  //       if (listFood[x].name.toLowerCase() == query.toLowerCase() ||
+  //           listFood[x].name.toLowerCase().contains(query.toLowerCase())) {
+  //         ModelFood model = listFood[x];
+  //         newList.add(ModelFood(
+  //             idFood: model.idFood,
+  //             name: model.name,
+  //             price: model.price,
+  //             rating: model.rating,
+  //             sum: model.sum));
+  //         listMakanan.value = newList;
+  //         listMakanan.notifyListeners();
+  //       }
+  //     }
+  //   } else {
+  //     listMakanan.value = listFood;
+  //     listMakanan.notifyListeners();
+  //   }
+  // }
 
-  void goOrder() {
-    for (int x = 0; x < valListFood.value.length; x++) {
-      if (valListFood.value[x].sum > 0) {}
-    }
+  void goOrder() async {
+    String address = await Session.load("alamat");
+    String username = await Session.load("username");
     bottomNav.pushNewScreen(context,
         withNavBar: false,
         screen: DetailOrder(
           listOrder: listOrder,
+          alamat: address,
+          username: username,
         ));
   }
 
-  void setupDummy() {
-    listFood.add(ModelFood(
-        idFood: 1, name: "Ayam Goreng", price: 20000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[0].sum);
-    listFood.add(ModelFood(
-        idFood: 2, name: "Mi Ayam", price: 10000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[1].sum);
-    listFood.add(ModelFood(
-        idFood: 3, name: "Ketoprak", price: 15000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[2].sum);
-    listFood.add(ModelFood(
-        idFood: 4, name: "Ayam Geprek", price: 35000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[3].sum);
-    listFood.add(
-        ModelFood(idFood: 5, name: "Jus Jeruk", price: 5000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[4].sum);
-    listFood.add(
-        ModelFood(idFood: 6, name: "Jus Alpukat", price: 7000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[5].sum);
-    listFood.add(ModelFood(
-        idFood: 7, name: "Sate Kulit", price: 30000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[6].sum);
-    listFood.add(
-        ModelFood(idFood: 8, name: "Kopikap", price: 1000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[7].sum);
-    listFood.add(ModelFood(
-        idFood: 9, name: "Nasi Goreng", price: 50000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[8].sum);
-    listFood.add(ModelFood(
-        idFood: 10, name: "Mie Goreng", price: 45000, rating: 4.3, sum: 0));
-    valListCountItem.value.add(listFood[9].sum);
-
-    valListFood.value = listFood;
-  }
+// void setupDummy() {
+//   listFood.add(ModelFood(
+//       idFood: 1, name: "Ayam Goreng", price: 20000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[0].sum);
+//   listFood.add(ModelFood(
+//       idFood: 2, name: "Mi Ayam", price: 10000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[1].sum);
+//   listFood.add(ModelFood(
+//       idFood: 3, name: "Ketoprak", price: 15000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[2].sum);
+//   listFood.add(ModelFood(
+//       idFood: 4, name: "Ayam Geprek", price: 35000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[3].sum);
+//   listFood.add(
+//       ModelFood(idFood: 5, name: "Jus Jeruk", price: 5000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[4].sum);
+//   listFood.add(
+//       ModelFood(idFood: 6, name: "Jus Alpukat", price: 7000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[5].sum);
+//   listFood.add(ModelFood(
+//       idFood: 7, name: "Sate Kulit", price: 30000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[6].sum);
+//   listFood.add(
+//       ModelFood(idFood: 8, name: "Kopikap", price: 1000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[7].sum);
+//   listFood.add(ModelFood(
+//       idFood: 9, name: "Nasi Goreng", price: 50000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[8].sum);
+//   listFood.add(ModelFood(
+//       idFood: 10, name: "Mie Goreng", price: 45000, rating: 4.3, sum: 0));
+//   valListCountItem.value.add(listFood[9].sum);
+//
+//   // valListFood.value = listFood;
+// }
 }
