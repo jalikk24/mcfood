@@ -6,6 +6,7 @@ import 'package:mcfood/model/ModelLogin.dart';
 import 'package:mcfood/ui/HomeMain.dart';
 import 'package:mcfood/ui/Register.dart';
 import 'package:mcfood/util/CustomColor.dart';
+import 'package:request_api_helper/session.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -15,11 +16,23 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> with ChangeNotifier {
-
   ValueNotifier<bool> valHidePass = ValueNotifier(true);
 
   TextEditingController tecUsername = TextEditingController();
   TextEditingController tecPassword = TextEditingController();
+
+  @override
+  void initState() {
+    Future.delayed(Duration.zero, () async {
+      if (await Session.load("idUser") != null) {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomeMain()),
+                (route) => false);
+      }
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,11 +81,16 @@ class _LoginState extends State<Login> with ChangeNotifier {
                           }
                           valHidePass.notifyListeners();
                         },
-                        child: Icon(hide ? Icons.visibility_off : Icons.visibility),
+                        child: Icon(
+                            hide ? Icons.visibility_off : Icons.visibility),
                       ),
-                      prefixIcon: Icon(Icons.lock_person_sharp, color: CustomColor.primary, size: 20,),
-                      contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                      prefixIcon: Icon(
+                        Icons.lock_person_sharp,
+                        color: CustomColor.primary,
+                        size: 20,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 25, vertical: 10),
                       hintText: "Password",
                       hintStyle: TextStyle(
                           fontFamily: "inter600",
@@ -83,15 +101,18 @@ class _LoginState extends State<Login> with ChangeNotifier {
                       isDense: true,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                        borderSide:
+                            BorderSide(width: 2, color: CustomColor.greyE8),
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                        borderSide:
+                            BorderSide(width: 2, color: CustomColor.greyE8),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                        borderSide:
+                            BorderSide(width: 2, color: CustomColor.greyE8),
                       ),
                     ),
                     style: TextStyle(
@@ -106,9 +127,9 @@ class _LoginState extends State<Login> with ChangeNotifier {
               padding: const EdgeInsets.only(top: 20),
               child: ElevatedButton(
                   onPressed: () {
-                    ModelLogin login = ModelLogin(username: tecUsername.text, password: tecPassword.text);
+                    ModelLogin login = ModelLogin(
+                        username: tecUsername.text, password: tecPassword.text);
                     postLogin(login);
-                    // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomeMain()), (route) => false);
                   },
                   style: ElevatedButton.styleFrom(
                       minimumSize: Size.fromHeight(45),
@@ -147,13 +168,12 @@ class _LoginState extends State<Login> with ChangeNotifier {
     );
   }
 
-  void postLogin(ModelLogin modelLogin) async{
+  void postLogin(ModelLogin modelLogin) async {
     await ControllerAuth().login(modelLogin, () {
-      // Navigator.pushAndRemoveUntil(
-      //     context,
-      //     MaterialPageRoute(builder: (context) => HomeMain()),
-      //     (route) => false);
-      Fluttertoast.showToast(msg: "Login success");
+      Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => HomeMain()),
+          (route) => false);
     }, () {
       Fluttertoast.showToast(msg: "Login failed");
     });

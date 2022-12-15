@@ -42,9 +42,8 @@ class ControllerAuth {
             dynamic result = value["result"];
             if(result != null) {
               ModelUser modelUser = ModelUser(idUser: result["id"], username: result["username"]);
-              // await Session.save(header: "idUser", integerData: modelUser.idUser);
-              // await Session.save(header: "username", stringData: modelUser.username);
-              Fluttertoast.showToast(msg: modelUser.username);
+              await Session.save(header: "idUser", integerData: modelUser.idUser);
+              await Session.save(header: "username", stringData: modelUser.username);
               success();
             } else {
               dynamic status = value["status"];
