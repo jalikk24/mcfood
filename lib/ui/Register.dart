@@ -7,11 +7,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_geocoder/geocoder.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:location/location.dart';
+import 'package:mcfood/controller/ControllerAuth.dart';
 import 'package:mcfood/controller/ControllerRegion.dart';
 import 'package:mcfood/customStyle/CustomDecoration.dart';
+import 'package:mcfood/model/ModelKecamatan.dart';
+import 'package:mcfood/model/ModelKelurahan.dart';
+import 'package:mcfood/model/ModelKotaKabs.dart';
 import 'package:mcfood/model/ModelProvinsi.dart';
+import 'package:mcfood/model/ModelRegister.dart';
 import 'package:mcfood/util/CustomColor.dart';
 import 'package:mcfood/util/ScreenSize.dart';
 import 'package:location/location.dart' as LocationManager;
@@ -38,9 +42,27 @@ class _RegisterState extends State<Register> with ChangeNotifier {
   String gender = "Laki laki";
   List<String> listTest = ["test1", "test2"];
   String selectedTest = "test1";
-  ValueNotifier<bool> valShowPass = ValueNotifier(false);
+  int selectedGender = 1;
+
+  TextEditingController tecNama = TextEditingController();
+  TextEditingController tecUmur = TextEditingController();
+  TextEditingController tecEmail = TextEditingController();
+  TextEditingController tecPassword = TextEditingController();
+
+  ValueNotifier<bool> valHidePass = ValueNotifier(true);
   ValueNotifier<String> valAddress = ValueNotifier("");
+
   ValueNotifier<List<ModelProvinsi>> listProv = ValueNotifier([]);
+  ValueNotifier<ModelProvinsi?> modelProv = ValueNotifier(null);
+
+  ValueNotifier<List<ModelKotaKabs>> listKota = ValueNotifier([]);
+  ValueNotifier<ModelKotaKabs?> modelKota = ValueNotifier(null);
+
+  ValueNotifier<List<ModelKecamatan>> listKec = ValueNotifier([]);
+  ValueNotifier<ModelKecamatan?> modelKec = ValueNotifier(null);
+
+  ValueNotifier<List<ModelKelurahan>> listKel = ValueNotifier([]);
+  ValueNotifier<ModelKelurahan?> modelKel = ValueNotifier(null);
 
   @override
   void initState() {
@@ -75,10 +97,12 @@ class _RegisterState extends State<Register> with ChangeNotifier {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              inputText(TextInputType.text, "Nama atau Username"),
-              inputText(TextInputType.number, "Umur"),
-              inputText(TextInputType.emailAddress, "Email"),
-              inputTextPassword(TextInputType.visiblePassword, "Password"),
+              inputText(
+                  TextInputType.text, "Nama atau Username", false, tecNama),
+              inputText(TextInputType.number, "Umur", true, tecUmur),
+              inputText(TextInputType.emailAddress, "Email", false, tecEmail),
+              inputTextPassword(
+                  TextInputType.visiblePassword, "Password", tecPassword),
               Padding(
                 padding: const EdgeInsets.only(top: 10),
                 child: Row(
@@ -99,6 +123,7 @@ class _RegisterState extends State<Register> with ChangeNotifier {
                           onChanged: (value) {
                             setState(() {
                               gender = value!;
+                              selectedGender = 1;
                             });
                           }),
                     ),
@@ -118,45 +143,21 @@ class _RegisterState extends State<Register> with ChangeNotifier {
                           onChanged: (value) {
                             setState(() {
                               gender = value!;
+                              selectedGender = 0;
                             });
                           }),
                     ),
                   ],
                 ),
               ),
-              DropdownButtonHideUnderline(
-                  child: DropdownButton2(
-                buttonDecoration: BoxDecoration(
-                  color: CustomColor.white,
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(width: 2, color: CustomColor.greyBd),
-                ),
-                buttonPadding: EdgeInsets.symmetric(horizontal: 10),
-                isExpanded: true,
-                dropdownDecoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(5),
-                  color: CustomColor.white,
-                ),
-                dropdownElevation: 1,
-                items: listTest
-                    .map((text) => DropdownMenuItem(
-                        value: text,
-                        child: Text(
-                          text,
-                          style: const TextStyle(
-                            fontFamily: "inter500",
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
-                        )))
-                    .toList(),
-                value: selectedTest,
-                onChanged: (value) {
-                  setState(() {
-                    selectedTest = value as String;
-                  });
-                },
-              )),
+              titleDropdown("Provinsi"),
+              dropdownProvinsi(),
+              titleDropdown("Kota/Kabupaten"),
+              dropdownKota(),
+              titleDropdown("Kecamatan"),
+              dropdownKec(),
+              titleDropdown("Kelurahan"),
+              dropdownKel(),
               Padding(
                 padding: const EdgeInsets.only(top: 20),
                 child: Row(
@@ -255,7 +256,20 @@ class _RegisterState extends State<Register> with ChangeNotifier {
                 padding: const EdgeInsets.only(top: 25),
                 child: ElevatedButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      ModelRegister register = ModelRegister(
+                          tecNama.text,
+                          int.parse(tecUmur.text),
+                          tecEmail.text,
+                          tecPassword.text,
+                          selectedGender,
+                          modelProv.value!.provId,
+                          modelKota.value!.cityId,
+                          modelKec.value!.kecId,
+                          modelKel.value!.kelurId,
+                          _currentPosition.latitude!,
+                          _currentPosition.longitude!,
+                          valAddress.value);
+                      postRegist(register);
                     },
                     style: ElevatedButton.styleFrom(
                         minimumSize: Size.fromHeight(45),
@@ -277,11 +291,13 @@ class _RegisterState extends State<Register> with ChangeNotifier {
     );
   }
 
-  Widget inputText(TextInputType inputType, String hint) {
+  Widget inputText(TextInputType inputType, String hint, bool isUmur,
+      TextEditingController controller) {
     return Padding(
       padding: EdgeInsets.only(top: 25),
       child: TextFormField(
-        obscureText: true,
+        controller: controller,
+        maxLength: isUmur ? 2 : 100,
         keyboardType: inputType,
         decoration: CustomDecoration().getFormBorder(hint, 10),
         style: TextStyle(
@@ -290,24 +306,26 @@ class _RegisterState extends State<Register> with ChangeNotifier {
     );
   }
 
-  Widget inputTextPassword(TextInputType inputType, String hint) {
+  Widget inputTextPassword(
+      TextInputType inputType, String hint, TextEditingController controller) {
     return Padding(
       padding: EdgeInsets.only(top: 25),
       child: ValueListenableBuilder<bool>(
-        valueListenable: valShowPass,
+        valueListenable: valHidePass,
         builder: (_, res, __) {
           return TextFormField(
+            controller: controller,
             obscureText: res,
             keyboardType: inputType,
             decoration: InputDecoration(
               suffixIcon: InkWell(
                 onTap: () {
-                  if (valShowPass.value) {
-                    valShowPass.value = false;
+                  if (valHidePass.value) {
+                    valHidePass.value = false;
                   } else {
-                    valShowPass.value = true;
+                    valHidePass.value = true;
                   }
-                  valShowPass.notifyListeners();
+                  valHidePass.notifyListeners();
                 },
                 child: Icon(res ? Icons.visibility_off : Icons.visibility),
               ),
@@ -340,6 +358,240 @@ class _RegisterState extends State<Register> with ChangeNotifier {
         },
       ),
     );
+  }
+
+  Widget titleDropdown(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 15),
+      child: Text(
+        title,
+        style: TextStyle(
+            fontFamily: "inter600", fontSize: 15, color: CustomColor.black),
+      ),
+    );
+  }
+
+  Widget dropdownProvinsi() {
+    return ValueListenableBuilder(
+      valueListenable: listProv,
+      builder: (_, list, __) {
+        return ValueListenableBuilder(
+          valueListenable: modelProv,
+          builder: (_, selectItem, __) {
+            return DropdownButtonHideUnderline(
+                child: DropdownButton2<ModelProvinsi>(
+              buttonDecoration: BoxDecoration(
+                color: CustomColor.white,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(width: 2, color: CustomColor.greyBd),
+              ),
+              buttonPadding: EdgeInsets.symmetric(horizontal: 10),
+              isExpanded: true,
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: CustomColor.white,
+              ),
+              dropdownElevation: 1,
+              items: list
+                  .map((text) => DropdownMenuItem<ModelProvinsi>(
+                      value: text,
+                      child: Text(
+                        text.provName,
+                        style: const TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      )))
+                  .toList(),
+              value: selectItem,
+              onChanged: (value) {
+                modelProv.value = list[list.indexOf(value!)];
+                modelProv.notifyListeners();
+
+                getKota(modelProv.value?.provId ?? 0);
+              },
+            ));
+          },
+        );
+      },
+    );
+  }
+
+  Widget dropdownKota() {
+    return ValueListenableBuilder(
+      valueListenable: listKota,
+      builder: (_, list, __) {
+        return ValueListenableBuilder(
+          valueListenable: modelKota,
+          builder: (_, selectItem, __) {
+            return DropdownButtonHideUnderline(
+                child: DropdownButton2<ModelKotaKabs>(
+              buttonDecoration: BoxDecoration(
+                color: CustomColor.white,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(width: 2, color: CustomColor.greyBd),
+              ),
+              buttonPadding: EdgeInsets.symmetric(horizontal: 10),
+              isExpanded: true,
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: CustomColor.white,
+              ),
+              dropdownElevation: 1,
+              items: list
+                  .map((text) => DropdownMenuItem<ModelKotaKabs>(
+                      value: text,
+                      child: Text(
+                        text.cityName,
+                        style: const TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      )))
+                  .toList(),
+              value: selectItem,
+              onChanged: (value) {
+                modelKota.value = list[list.indexOf(value!)];
+                modelKota.notifyListeners();
+
+                getKec(modelKota.value?.cityId ?? 0);
+              },
+            ));
+          },
+        );
+      },
+    );
+  }
+
+  Widget dropdownKec() {
+    return ValueListenableBuilder(
+      valueListenable: listKec,
+      builder: (_, list, __) {
+        return ValueListenableBuilder(
+          valueListenable: modelKec,
+          builder: (_, selectItem, __) {
+            return DropdownButtonHideUnderline(
+                child: DropdownButton2<ModelKecamatan>(
+              buttonDecoration: BoxDecoration(
+                color: CustomColor.white,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(width: 2, color: CustomColor.greyBd),
+              ),
+              buttonPadding: EdgeInsets.symmetric(horizontal: 10),
+              isExpanded: true,
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: CustomColor.white,
+              ),
+              dropdownElevation: 1,
+              items: list
+                  .map((text) => DropdownMenuItem<ModelKecamatan>(
+                      value: text,
+                      child: Text(
+                        text.kecName,
+                        style: const TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      )))
+                  .toList(),
+              value: selectItem,
+              onChanged: (value) {
+                modelKec.value = list[list.indexOf(value!)];
+                modelKec.notifyListeners();
+
+                getKel(modelKec.value?.kecId ?? 0);
+              },
+            ));
+          },
+        );
+      },
+    );
+  }
+
+  Widget dropdownKel() {
+    return ValueListenableBuilder(
+      valueListenable: listKel,
+      builder: (_, list, __) {
+        return ValueListenableBuilder(
+          valueListenable: modelKel,
+          builder: (_, selectItem, __) {
+            return DropdownButtonHideUnderline(
+                child: DropdownButton2<ModelKelurahan>(
+              buttonDecoration: BoxDecoration(
+                color: CustomColor.white,
+                borderRadius: BorderRadius.circular(5),
+                border: Border.all(width: 2, color: CustomColor.greyBd),
+              ),
+              buttonPadding: EdgeInsets.symmetric(horizontal: 10),
+              isExpanded: true,
+              dropdownDecoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: CustomColor.white,
+              ),
+              dropdownElevation: 1,
+              items: list
+                  .map((text) => DropdownMenuItem<ModelKelurahan>(
+                      value: text,
+                      child: Text(
+                        text.kelurName,
+                        style: const TextStyle(
+                          fontFamily: "inter500",
+                          fontSize: 16,
+                          color: Colors.black,
+                        ),
+                      )))
+                  .toList(),
+              value: selectItem,
+              onChanged: (value) {
+                modelKel.value = list[list.indexOf(value!)];
+                modelKel.notifyListeners();
+              },
+            ));
+          },
+        );
+      },
+    );
+  }
+
+  getProvinsi() async {
+    await ControllerRegion().getProvinsi((result) {
+      listProv.value = result;
+      listProv.notifyListeners();
+    });
+  }
+
+  getKota(int idProv) async {
+    await ControllerRegion().getKotaKabs(idProv, (result) {
+      listKota.value = result;
+      listKota.notifyListeners();
+    });
+  }
+
+  getKec(int idKota) async {
+    await ControllerRegion().getKecamatan(idKota, (result) {
+      listKec.value = result;
+      listKec.notifyListeners();
+    });
+  }
+
+  getKel(int idKec) async {
+    await ControllerRegion().getKelurahan(idKec, (result) {
+      listKel.value = result;
+      listKel.notifyListeners();
+    });
+  }
+
+  void postRegist(ModelRegister modelRegister) async {
+    await ControllerAuth().register(modelRegister, () {
+      Fluttertoast.showToast(msg: "Registrasi berhasil");
+      Navigator.pop(context);
+    }, () {
+      Fluttertoast.showToast(msg: "Registrasi gagal");
+    });
   }
 
   void _onMapCreated(GoogleMapController _cntlr) {
@@ -421,7 +673,8 @@ class _RegisterState extends State<Register> with ChangeNotifier {
       draggable: true,
       onDragEnd: (latlng) async {
         final coordinates = Coordinates(latlng.latitude, latlng.longitude);
-        var address = await Geocoder.local.findAddressesFromCoordinates(coordinates);
+        var address =
+            await Geocoder.local.findAddressesFromCoordinates(coordinates);
         var first = address.first;
         _address = first.addressLine!;
         valAddress.value = _address;
@@ -433,13 +686,4 @@ class _RegisterState extends State<Register> with ChangeNotifier {
       icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
     ));
   }
-
-  getProvinsi() async {
-    await ControllerRegion().getProvinsi((result) {
-      listProv.value = result;
-      listProv.notifyListeners();
-      print("PROVINSI ${listProv.value}");
-    });
-  }
-
 }

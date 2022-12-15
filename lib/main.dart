@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:mcfood/MyHttpOverrides.dart';
 import 'package:mcfood/MyLocation.dart';
 import 'package:mcfood/ui/HomeMain.dart';
 import 'package:mcfood/ui/Login.dart';
@@ -16,11 +15,8 @@ import 'package:request_api_helper/request_api_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  HttpOverrides.global = MyHttpOverrides();
-  GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   await RequestApiHelper.init(RequestApiHelperData(
-      navigatorKey: navigatorKey,
-      baseUrl: "https://jsonplaceholder.typicode.com/",
+      baseUrl: "http://192.168.1.4/ppb/",
       onAuthError: (context) =>
           Fluttertoast.showToast(msg: "Error Unauthorize"),
       debug: true));

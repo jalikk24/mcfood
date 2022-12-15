@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:mcfood/controller/ControllerAuth.dart';
 import 'package:mcfood/customStyle/CustomDecoration.dart';
+import 'package:mcfood/model/ModelLogin.dart';
 import 'package:mcfood/ui/HomeMain.dart';
 import 'package:mcfood/ui/Register.dart';
 import 'package:mcfood/util/CustomColor.dart';
@@ -11,7 +14,13 @@ class Login extends StatefulWidget {
   State<Login> createState() => _LoginState();
 }
 
-class _LoginState extends State<Login> {
+class _LoginState extends State<Login> with ChangeNotifier {
+
+  ValueNotifier<bool> valHidePass = ValueNotifier(true);
+
+  TextEditingController tecUsername = TextEditingController();
+  TextEditingController tecPassword = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,32 +42,73 @@ class _LoginState extends State<Login> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: TextFormField(
+                  controller: tecUsername,
                   decoration: CustomDecoration().getFormBorderWithIcon(
                       Icons.person, "Username", 10, CustomColor.primary),
                   style: TextStyle(
                       fontFamily: "inter600",
                       fontSize: 15,
-                      color: CustomColor.greyBd)),
+                      color: CustomColor.black)),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              child: TextFormField(
-                decoration: CustomDecoration().getFormBorderWithIcon(
-                    Icons.lock_person_sharp,
-                    "Password",
-                    10,
-                    CustomColor.primary),
-                style: TextStyle(
-                    fontFamily: "inter600",
-                    fontSize: 15,
-                    color: CustomColor.greyBd),
+              child: ValueListenableBuilder(
+                valueListenable: valHidePass,
+                builder: (_, hide, __) {
+                  return TextFormField(
+                    obscureText: hide,
+                    controller: tecPassword,
+                    decoration: InputDecoration(
+                      suffixIcon: InkWell(
+                        onTap: () {
+                          if (valHidePass.value) {
+                            valHidePass.value = false;
+                          } else {
+                            valHidePass.value = true;
+                          }
+                          valHidePass.notifyListeners();
+                        },
+                        child: Icon(hide ? Icons.visibility_off : Icons.visibility),
+                      ),
+                      prefixIcon: Icon(Icons.lock_person_sharp, color: CustomColor.primary, size: 20,),
+                      contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 25, vertical: 10),
+                      hintText: "Password",
+                      hintStyle: TextStyle(
+                          fontFamily: "inter600",
+                          fontSize: 15,
+                          color: CustomColor.greyBd),
+                      fillColor: CustomColor.greyFb,
+                      filled: true,
+                      isDense: true,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(width: 2, color: CustomColor.greyE8),
+                      ),
+                    ),
+                    style: TextStyle(
+                        fontFamily: "inter600",
+                        fontSize: 15,
+                        color: CustomColor.black),
+                  );
+                },
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(top: 20),
               child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomeMain()), (route) => false);
+                    ModelLogin login = ModelLogin(username: tecUsername.text, password: tecPassword.text);
+                    postLogin(login);
+                    // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => HomeMain()), (route) => false);
                   },
                   style: ElevatedButton.styleFrom(
                       minimumSize: Size.fromHeight(45),
@@ -95,5 +145,17 @@ class _LoginState extends State<Login> {
         ),
       ),
     );
+  }
+
+  void postLogin(ModelLogin modelLogin) async{
+    await ControllerAuth().login(modelLogin, () {
+      // Navigator.pushAndRemoveUntil(
+      //     context,
+      //     MaterialPageRoute(builder: (context) => HomeMain()),
+      //     (route) => false);
+      Fluttertoast.showToast(msg: "Login success");
+    }, () {
+      Fluttertoast.showToast(msg: "Login failed");
+    });
   }
 }

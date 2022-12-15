@@ -40,7 +40,7 @@ dependencies:
   google_maps_flutter: ^2.2.1
   location: ^4.4.0
   flutter_geocoder: ^0.2.2-nullsafety
-  request_api_helper: ^4.0.4
+  request_api_helper: ^4.0.4+3
   #  persistent_bottom_nav_bar: ^5.0.2
   persistent_bottom_nav_bar_v2: ^4.2.5
   cached_network_image: ^3.2.1
